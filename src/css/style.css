@@ -1,4 +1,24 @@
+body {
+  font-size: 14px;
+}
+
 #board {
   width: 400px;
   height: 400px;
+}
+
+.container {
+  display: flex;
+}
+
+.button__container {
+  display: flex;
+}
+
+.button__container button {
+  background-color: rgb(44, 85, 146);
+  color: white;
+  height: fit-content;
+  padding: 5px 10px;
+  border-radius: 5px;
 }
