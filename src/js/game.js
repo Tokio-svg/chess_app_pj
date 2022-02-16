@@ -21,6 +21,9 @@ const cfg = {
   onMouseoverSquare: onMouseoverSquare,
 };
 
+// 先読み深さ
+const SEARCH_DEPTH = 2;
+
 // ---------------------------------------------
 // ChessBoadインスタンス作成
 // ---------------------------------------------
@@ -134,14 +137,17 @@ async function calcMove() {
   const turn = game.turn();
   const moves = [];
   let maxScore = null;
+  let alfa = -Infinity;
   for (const [index, cpuMove] of cpuMoves.entries()) {
 
-    const score = await getNodeScore(baseFen, cpuMove, turn);
+    const score = await getNodeScore(baseFen, cpuMove, turn, SEARCH_DEPTH, alfa);
 
     // 最大スコアが更新されたらscoresに格納
     if (maxScore === null || maxScore <= score) {
       maxScore = score;
       moves.push({ score: score, index: index });
+      // 下限値alfaを更新
+      alfa = maxScore;
     }
   }
 
@@ -159,42 +165,56 @@ async function calcMove() {
 // 探索処理
 // ---------------------------------------------
 
-// 先読み深さ
-const SEARCH_DEPTH = 1;
-
 // SEARCH_DEPTH + 1手先までを探索して最善手候補を配列として返す
-async function getNodeScore(fen, move, turn, depth = SEARCH_DEPTH) {
+async function getNodeScore(fen, move, turn, depth, alfa) {
   // 現在の盤面を計算用のインスタンスにセット
   calcGame.load(fen);
   // 計算用のインスタンスを1手移動
   calcGame.move(move, { promotion: 'q' });
+  const cpuTurnFlg = (SEARCH_DEPTH - depth) % 2 === 0; // CPUの手番の場合はtrue
 
   // 深度が0ならスコアを計算して返す
   if (depth === 0) {
-    // 評価関数でスコアを計算
     const score = await evaluate(calcGame.board(), turn);
-    return score;
+    return cpuTurnFlg ? score : -score;
   }
 
   // 深度が1以上なら移動可能な手を取得して各手に対して再帰的に処理する
   const baseFen = calcGame.fen();
   const legalMoves = calcGame.moves();
   const nextTurn = turn === 'w' ? 'b' : 'w';
+  let nextAlfa = cpuTurnFlg ? -Infinity : Infinity;
   let maxScore = null;
 
   // 移動可能な手が存在しない場合はスコアを計算して返す
   if (legalMoves.length === 0) {
-    // 評価関数でスコアを計算
     const score = await evaluate(calcGame.board(), turn);
-    return score;
+    return cpuTurnFlg ? score : -score;
   }
 
   for (const legalMove of legalMoves) {
-    const score = await getNodeScore(baseFen, legalMove, nextTurn, depth - 1);
-    // 最大スコアが更新されたらmaxScoresを変更
-    if (maxScore === null || maxScore < score) maxScore = score;
+    const score = await getNodeScore(baseFen, legalMove, nextTurn, depth - 1, nextAlfa);
+
+    if (maxScore === null) {
+      maxScore = score;
+      nextAlfa = maxScore;
+      continue;
+    }
+    // 最大スコアが更新されたらmaxScoreを変更
+    if (cpuTurnFlg && maxScore > score) {
+      maxScore = score;
+      nextAlfa = maxScore;
+    }
+    if (!cpuTurnFlg && maxScore < score) {
+      maxScore = score;
+      nextAlfa = maxScore;
+    }
+    // CPUの手番の場合：下限値alfaよりも小さい値が出たら探索を終了
+    if (cpuTurnFlg && maxScore < alfa) break;
+    // プレイヤーの手番の場合：下限値alfaよりも大きい値が出たら探索を終了
+    if (!cpuTurnFlg && maxScore > alfa) break;
   }
-  return (SEARCH_DEPTH - depth) % 2 === 0 ? -maxScore : maxScore;
+  return maxScore;
 }
 
 // ---------------------------------------------
@@ -208,7 +228,7 @@ const PIECE_SCORE = {
   'b': 3500,
   'r': 5000,
   'q': 9000,
-  'k': 1000000000,
+  'k': 4000,
 }
 
 // 位置による補正(indexはchess.board()と対応)
