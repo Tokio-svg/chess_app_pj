@@ -129,18 +129,14 @@ async function calcMove() {
   // 配列の中身が0になったらゲームを終了する
   if (cpuMoves.length === 0) return null;
 
-  // 1つずつスコアを算出
+  // // 1つずつスコアを算出
   const baseFen = game.fen();
-  const color = game.turn();
+  const turn = game.turn();
   const moves = [];
   let maxScore = null;
   for (const [index, cpuMove] of cpuMoves.entries()) {
-    // 現在の盤面を計算用のインスタンスにセット
-    calcGame.load(baseFen);
-    // 計算用のインスタンスを1手移動
-    calcGame.move(cpuMove, { promotion: 'q' });
-    // 評価関数でスコアを計算
-    const score = await evaluate(calcGame.board(), color);
+
+    const score = await getNodeScore(baseFen, cpuMove, turn);
 
     // 最大スコアが更新されたらscoresに格納
     if (maxScore === null || maxScore <= score) {
@@ -148,6 +144,7 @@ async function calcMove() {
       moves.push({ score: score, index: index });
     }
   }
+
   // movesの中からmaxScoreと値が一致する要素を抽出
   let maxMoves = moves.filter((move) => move.score === maxScore);
   // maxMovesの中からランダムで1つ選ぶ
@@ -156,6 +153,48 @@ async function calcMove() {
   const selectedIndex = maxMoves[randomNum].index;
   return cpuMoves[selectedIndex];
 
+}
+
+// ---------------------------------------------
+// 探索処理
+// ---------------------------------------------
+
+// 先読み深さ
+const SEARCH_DEPTH = 1;
+
+// SEARCH_DEPTH + 1手先までを探索して最善手候補を配列として返す
+async function getNodeScore(fen, move, turn, depth = SEARCH_DEPTH) {
+  // 現在の盤面を計算用のインスタンスにセット
+  calcGame.load(fen);
+  // 計算用のインスタンスを1手移動
+  calcGame.move(move, { promotion: 'q' });
+
+  // 深度が0ならスコアを計算して返す
+  if (depth === 0) {
+    // 評価関数でスコアを計算
+    const score = await evaluate(calcGame.board(), turn);
+    return score;
+  }
+
+  // 深度が1以上なら移動可能な手を取得して各手に対して再帰的に処理する
+  const baseFen = calcGame.fen();
+  const legalMoves = calcGame.moves();
+  const nextTurn = turn === 'w' ? 'b' : 'w';
+  let maxScore = null;
+
+  // 移動可能な手が存在しない場合はスコアを計算して返す
+  if (legalMoves.length === 0) {
+    // 評価関数でスコアを計算
+    const score = await evaluate(calcGame.board(), turn);
+    return score;
+  }
+
+  for (const legalMove of legalMoves) {
+    const score = await getNodeScore(baseFen, legalMove, nextTurn, depth - 1);
+    // 最大スコアが更新されたらmaxScoresを変更
+    if (maxScore === null || maxScore < score) maxScore = score;
+  }
+  return (SEARCH_DEPTH - depth) % 2 === 0 ? -maxScore : maxScore;
 }
 
 // ---------------------------------------------
@@ -174,23 +213,24 @@ const PIECE_SCORE = {
 
 // 位置による補正(indexはchess.board()と対応)
 const POS_SCORE = [
-  1, 1, 1,   1,   1,   1,   1, 1,
-  1, 1, 1,   1,   1,   1,   1, 1,
-  1, 1, 1.5, 1.5, 1.5, 1.5, 1, 1,
-  1, 1, 1.5, 2,   2,   1.5, 1, 1,
-  1, 1, 1.5, 2,   2,   1.5, 1, 1,
-  1, 1, 1.5, 1.5, 1.5, 1.5, 1, 1,
-  1, 1, 1,   1,   1,   1,   1, 1,
-  1, 1, 1,   1,   1,   1,   1, 1
+  [1, 1, 1,   1,   1,   1,   1, 1],
+  [1, 1, 1,   1,   1,   1,   1, 1],
+  [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+  [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+  [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+  [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+  [1, 1, 1,   1,   1,   1,   1, 1],
+  [1, 1, 1,   1,   1,   1,   1, 1]
 ]
 
 // 評価関数
 function evaluate(board, color) {
   let score = 0;
-  for (const raw of board) {
-    for (const square of raw) {
+  for (const [rawIndex, raw] of board.entries()) {
+    for (const [squareIndex, square] of raw.entries()) {
       if (!square) continue;
-      let pieceScore = PIECE_SCORE[square.type];
+      // square.type='p'~'k'
+      let pieceScore = PIECE_SCORE[square.type] * POS_SCORE[rawIndex][squareIndex];
       if (square.color !== color) pieceScore = -pieceScore;
       score += pieceScore;
     }
