@@ -16,7 +16,7 @@ const cfg = {
   position: 'start',
   // 駒が移動した後にonDrop関数を実行する
   onDrop: onDrop,
-  onSnapEnd: onSnapEnd,
+  // onSnapEnd: onSnapEnd,
   onMouseoutSquare: removeHighlight,
   onMouseoverSquare: onMouseoverSquare,
 };
@@ -32,7 +32,7 @@ const board = new ChessBoard('board', cfg);
 // ---------------------------------------------
 // 駒が置かれた場合の処理
 // ---------------------------------------------
-function onDrop(source, target) {
+async function onDrop(source, target) {
   removeHighlight();
 
   // 駒の移動パターンをチェックする
@@ -45,22 +45,17 @@ function onDrop(source, target) {
   // 駒の移動に問題があれば元の位置に戻す
   if (move === null) return 'snapback';
 
-  makeCPUmove();
-
-  const playerMove = game.moves();
-  // 配列の中身が0になったらゲームを終了する
-  if (playerMove.length === 0) {
-    alert('終了');
+  setTimeout(async () => {
+    await makeCPUmove();
+    board.position(game.fen());
+    // ゲームを終了する
+    if (game.game_over()) {
+      alert('終了');
   }
+  }, 200)
+
 
 };
-
-// ---------------------------------------------
-// 盤面更新処理
-// ---------------------------------------------
-function onSnapEnd () {
-  board.position(game.fen());
-}
 
 // ---------------------------------------------
 // ボタン操作処理
@@ -116,6 +111,31 @@ function removeHighlight () {
 }
 
 // ---------------------------------------------
+// CPUプレイヤーの定跡チェック処理
+// ---------------------------------------------
+function checkTheory() {
+  const history = game.history();
+
+  if (history.length > 25) return null;
+
+  let theoryMove = null;
+
+  for (const opening of OPENINGS) {
+    let count = 0;
+    for (const [index, move] of opening.entries()) {
+      if (move === history[index]) count++;
+      else break;
+    }
+    if (count > 0 && opening.length > history.length) {
+      theoryMove = opening[count];
+      break;
+    }
+  }
+
+  return theoryMove;
+}
+
+// ---------------------------------------------
 // CPUプレイヤーの移動処理
 // ---------------------------------------------
 async function makeCPUmove() {
@@ -131,6 +151,10 @@ async function makeCPUmove() {
 // CPU思考処理
 // ---------------------------------------------
 async function calcMove() {
+  // 定跡をチェック
+  const theoryMove = await checkTheory();
+  if (theoryMove) return theoryMove;
+
   // CPUが動ける場所を変数に代入
   const cpuMoves = game.moves();
 
@@ -138,7 +162,7 @@ async function calcMove() {
   if (cpuMoves.length === 0) return null;
 
   // 思考時間計算用変数
-  let startTime = Date.now();
+  const startTime = Date.now();
 
   // 1つずつスコアを算出
   const baseFen = game.fen();
@@ -186,7 +210,9 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
 
   // 深度が0ならスコアを計算して返す
   if (depth === 0) {
-    const score = await evaluate(calcGame.board(), turn);
+    let score;
+    if (calcGame.in_checkmate()) score = Infinity;
+      else score = await evaluate(calcGame.board(), turn);
     return cpuTurnFlg ? score : -score;
   }
 
@@ -199,7 +225,9 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
 
   // 移動可能な手が存在しない場合はスコアを計算して返す
   if (legalMoves.length === 0) {
-    const score = await evaluate(calcGame.board(), turn);
+    let score;
+    if (calcGame.in_checkmate()) score = Infinity;
+      else score = await evaluate(calcGame.board(), turn);
     return cpuTurnFlg ? score : -score;
   }
 
