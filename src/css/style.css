@@ -12,7 +12,7 @@ body {
 }
 
 .button__container {
-  display: flex;
+  margin-left: 10px;
 }
 
 .button__container button {

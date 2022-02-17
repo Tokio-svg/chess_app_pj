@@ -75,6 +75,11 @@ $('#resetBtn').on('click', () => {
 // 視点変更ボタン
 $('#flipBtn').on('click', board.flip);
 
+// 履歴表示ボタン
+$('#histBtn').on('click', () => {
+  console.log(game.history());
+});
+
 // ---------------------------------------------
 // 移動可能位置ハイライト処理
 // ---------------------------------------------
@@ -132,7 +137,10 @@ async function calcMove() {
   // 配列の中身が0になったらゲームを終了する
   if (cpuMoves.length === 0) return null;
 
-  // // 1つずつスコアを算出
+  // 思考時間計算用変数
+  let startTime = Date.now();
+
+  // 1つずつスコアを算出
   const baseFen = game.fen();
   const turn = game.turn();
   const moves = [];
@@ -157,6 +165,9 @@ async function calcMove() {
   const randomNum = Math.floor(Math.random() * maxMoves.length);
   // 選ばれた要素のindexを取得
   const selectedIndex = maxMoves[randomNum].index;
+  // 思考時間を出力
+  console.log((Date.now() - startTime) + 'ms');
+
   return cpuMoves[selectedIndex];
 
 }
