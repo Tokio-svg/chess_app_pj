@@ -22,3 +22,13 @@ body {
   padding: 5px 10px;
   border-radius: 5px;
 }
+
+.info__wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+#thinkMessage {
+  display: none;
+  color: red;
+}

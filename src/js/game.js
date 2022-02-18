@@ -1,12 +1,16 @@
 // ---------------------------------------------
-// Chessインスタンス作成
+// DOM
 // ---------------------------------------------
-const game = new Chess();
+const thinkMessage = document.getElementById('thinkMessage');
 
 // ---------------------------------------------
-// CPU思考用Chessインスタンス作成
+// 各種変数
 // ---------------------------------------------
-const calcGame = new Chess();
+// 先読み深さ
+const SEARCH_DEPTH = 2;
+// ハイライトの色指定
+const whiteSquareGrey = '#a9a9a9';
+const blackSquareGrey = '#696969';
 
 // ---------------------------------------------
 // 設定
@@ -14,48 +18,45 @@ const calcGame = new Chess();
 const cfg = {
   draggable: true,
   position: 'start',
-  // 駒が移動した後にonDrop関数を実行する
   onDrop: onDrop,
-  // onSnapEnd: onSnapEnd,
   onMouseoutSquare: removeHighlight,
   onMouseoverSquare: onMouseoverSquare,
 };
 
-// 先読み深さ
-const SEARCH_DEPTH = 2;
-
 // ---------------------------------------------
-// ChessBoadインスタンス作成
+// Chess, Boardインスタンス作成
 // ---------------------------------------------
+const game = new Chess();
+const calcGame = new Chess();
 const board = new ChessBoard('board', cfg);
 
 // ---------------------------------------------
-// 駒が置かれた場合の処理
+// 移動可能位置ハイライト処理
 // ---------------------------------------------
-async function onDrop(source, target) {
-  removeHighlight();
-
-  // 駒の移動パターンをチェックする
-  const move = game.move({
-    from: source,  // 移動元の位置
-    to: target,   // 移動後の位置
-    promotion: 'q'
-  });
-
-  // 駒の移動に問題があれば元の位置に戻す
-  if (move === null) return 'snapback';
-
-  setTimeout(async () => {
-    await makeCPUmove();
-    board.position(game.fen());
-    // ゲームを終了する
-    if (game.game_over()) {
-      alert('終了');
+function onMouseoverSquare (square, piece) {
+  const moves = game.moves({
+    square: square,
+    verbose: true,
+  })
+  if (moves.length === 0) return;
+  highlightSquare(square);
+  for (let i = 0; i < moves.length; i++) {
+    highlightSquare(moves[i].to);
   }
-  }, 200)
+}
 
+function highlightSquare (square) {
+  const $square = $('#board .square-' + square);
 
-};
+  let background = whiteSquareGrey;
+  if ($square.hasClass('black-3c85d')) background = blackSquareGrey;
+
+  $square.css('background', background);
+}
+
+function removeHighlight () {
+  $('#board .square-55d63').css('background', '')
+}
 
 // ---------------------------------------------
 // ボタン操作処理
@@ -76,68 +77,42 @@ $('#histBtn').on('click', () => {
 });
 
 // ---------------------------------------------
-// 移動可能位置ハイライト処理
+// 駒が置かれた場合の処理
 // ---------------------------------------------
-// 変更後の色指定
-const whiteSquareGrey = '#a9a9a9';
-const blackSquareGrey = '#696969';
+function onDrop(source, target) {
+  removeHighlight();
 
-// マウスオーバー時
-function onMouseoverSquare (square, piece) {
-  const moves = game.moves({
-    square: square,
-    verbose: true,
-  })
-  if (moves.length === 0) return;
-  highlightSquare(square);
-  for (let i = 0; i < moves.length; i++) {
-    highlightSquare(moves[i].to);
-  }
-}
+  // 駒の移動パターンをチェックする
+  const move = game.move({
+    from: source,  // 移動元の位置
+    to: target,   // 移動後の位置
+    promotion: 'q'
+  });
+  // 駒の移動に問題があれば元の位置に戻す
+  if (move === null) return 'snapback';
 
-// 色変更処理
-function highlightSquare (square) {
-  const $square = $('#board .square-' + square);
+  // 思考中メッセージON
+  thinkMessage.style.display = 'block';
 
-  let background = whiteSquareGrey;
-  if ($square.hasClass('black-3c85d')) background = blackSquareGrey;
-
-  $square.css('background', background);
-}
-
-// ハイライト解除処理
-function removeHighlight () {
-  $('#board .square-55d63').css('background', '')
-}
-
-// ---------------------------------------------
-// CPUプレイヤーの定跡チェック処理
-// ---------------------------------------------
-function checkTheory() {
-  const history = game.history();
-
-  if (history.length > 25) return null;
-
-  let theoryMove = null;
-
-  for (const opening of OPENINGS) {
-    let count = 0;
-    for (const [index, move] of opening.entries()) {
-      if (move === history[index]) count++;
-      else break;
+  setTimeout(async () => {
+    await makeCPUmove();
+    // 思考中メッセージOFF
+    thinkMessage.style.display = 'none';
+    board.position(game.fen());
+    // ゲームを終了する
+    if (game.game_over()) {
+      alert('終了');
     }
-    if (count > 0 && opening.length > history.length) {
-      theoryMove = opening[count];
-      break;
-    }
-  }
+  }, 200)
 
-  return theoryMove;
-}
+};
 
-// ---------------------------------------------
+
+// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 // CPUプレイヤーの移動処理
-// ---------------------------------------------
+// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 async function makeCPUmove() {
   const cpuMove = await calcMove();
 
@@ -197,6 +172,35 @@ async function calcMove() {
 }
 
 // ---------------------------------------------
+// CPUプレイヤーの定跡チェック処理
+// ---------------------------------------------
+function checkTheory() {
+  const history = game.history();
+
+  if (history.length > 25) return null;
+
+  let theoryMove = null;
+
+  for (const opening of OPENINGS) {
+    let count = 0;
+    for (const [index, move] of opening.entries()) {
+      if (move === history[index]) count++;
+      else if (!history[index]) break;
+      else {
+        count = 0;
+        break;
+      }
+    }
+    if (count > 0 && opening.length > history.length) {
+      theoryMove = opening[count];
+      break;
+    }
+  }
+
+  return theoryMove;
+}
+
+// ---------------------------------------------
 // 探索処理
 // ---------------------------------------------
 
@@ -240,18 +244,13 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
       continue;
     }
     // 最大スコアが更新されたらmaxScoreを変更
-    if (cpuTurnFlg && maxScore > score) {
-      maxScore = score;
-      nextAlfa = maxScore;
-    }
-    if (!cpuTurnFlg && maxScore < score) {
+    if ((cpuTurnFlg && maxScore > score) || (!cpuTurnFlg && maxScore < score)) {
       maxScore = score;
       nextAlfa = maxScore;
     }
     // CPUの手番の場合：下限値alfaよりも小さい値が出たら探索を終了
-    if (cpuTurnFlg && maxScore < alfa) break;
     // プレイヤーの手番の場合：下限値alfaよりも大きい値が出たら探索を終了
-    if (!cpuTurnFlg && maxScore > alfa) break;
+    if ((cpuTurnFlg && maxScore < alfa) || (!cpuTurnFlg && maxScore > alfa)) break;
   }
   return maxScore;
 }
@@ -270,7 +269,7 @@ const PIECE_SCORE = {
   'k': 4000,
 }
 
-// 位置による補正(indexはchess.board()と対応)
+// 位置による補正(indexはchess.board()に対応)
 const POS_SCORE = [
   [1, 1, 1,   1,   1,   1,   1, 1],
   [1, 1, 1,   1,   1,   1,   1, 1],
