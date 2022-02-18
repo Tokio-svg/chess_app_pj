@@ -177,11 +177,14 @@ async function calcMove() {
 function checkTheory() {
   const history = game.history();
 
+  if (history.length === 0) return OPENINGS[Math.floor(Math.random() * OPENINGS.length)];
   if (history.length > 25) return null;
 
-  let theoryMove = null;
+  // 初手が一致する定跡を抽出
+  const selectedOpenings = OPENINGS.filter((item) => item[0] === history[0]);
+  const theoryMoves = [];
 
-  for (const opening of OPENINGS) {
+  for (const opening of selectedOpenings) {
     let count = 0;
     for (const [index, move] of opening.entries()) {
       if (move === history[index]) count++;
@@ -192,10 +195,14 @@ function checkTheory() {
       }
     }
     if (count > 0 && opening.length > history.length) {
-      theoryMove = opening[count];
-      break;
+      theoryMoves.push(opening[count]);
     }
   }
+
+  if (!theoryMoves.length) return null;
+
+  const randomNum = Math.floor(Math.random() * theoryMoves.length);
+  const theoryMove = theoryMoves[randomNum];
 
   return theoryMove;
 }
@@ -214,9 +221,7 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
 
   // 深度が0ならスコアを計算して返す
   if (depth === 0) {
-    let score;
-    if (calcGame.in_checkmate()) score = Infinity;
-      else score = await evaluate(calcGame.board(), turn);
+    const score = await evaluate(calcGame, turn);
     return cpuTurnFlg ? score : -score;
   }
 
@@ -229,9 +234,7 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
 
   // 移動可能な手が存在しない場合はスコアを計算して返す
   if (legalMoves.length === 0) {
-    let score;
-    if (calcGame.in_checkmate()) score = Infinity;
-      else score = await evaluate(calcGame.board(), turn);
+    const score = await evaluate(calcGame, turn);
     return cpuTurnFlg ? score : -score;
   }
 
@@ -270,7 +273,7 @@ const PIECE_SCORE = {
 }
 
 // 位置による補正(indexはchess.board()に対応)
-const POS_SCORE = [
+const POS_RATE = [
   [1, 1, 1,   1,   1,   1,   1, 1],
   [1, 1, 1,   1,   1,   1,   1, 1],
   [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
@@ -279,19 +282,31 @@ const POS_SCORE = [
   [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
   [1, 1, 1,   1,   1,   1,   1, 1],
   [1, 1, 1,   1,   1,   1,   1, 1]
-]
+];
+
+// チェック状態の補正
+const CHECK_RATE = 1.05;
 
 // 評価関数
-function evaluate(board, color) {
-  let score = 0;
+function evaluate(game, color) {
+  const board = game.board();
+  let white = 0;
+  let black = 0;
+  if (game.in_checkmate()) return Infinity;
+
   for (const [rawIndex, raw] of board.entries()) {
     for (const [squareIndex, square] of raw.entries()) {
       if (!square) continue;
       // square.type='p'~'k'
-      let pieceScore = PIECE_SCORE[square.type] * POS_SCORE[rawIndex][squareIndex];
-      if (square.color !== color) pieceScore = -pieceScore;
-      score += pieceScore;
+      let pieceScore = PIECE_SCORE[square.type] * POS_RATE[rawIndex][squareIndex];
+      if (square.color === 'w') white += pieceScore;
+        else black += pieceScore;
     }
   }
+
+  let score = color === 'w' ? white - black : black - white;
+
+  if (game.in_check()) score * CHECK_RATE;  // 要修正
+
   return score;
 }
