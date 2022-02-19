@@ -63,10 +63,53 @@ const OPENINGS = [
   // D94	Grunfeld
   ['d4', 'Nf6', 'c4', 'g6', 'Nc3', 'd5', 'Nf3', 'Bg7', 'e3'],
 
+  // B05	Alekhine's Defense, Modern
+  ['e4', 'Nf6', 'e5', 'Nd5', 'd4', 'd6', 'Nf3', 'Bg4'],
+  // B09	Pirc, Austrian Attack
+  ['e4', 'd6', 'd4', 'Nf6', 'Nc3', 'g6', 'f4'],
+  // B11	Caro-Kann, Two Knights, 3...Bg4
+  ['e4', 'c6', 'Nc3', 'd5', 'Nf3', 'Bg4'],
+  // B14	Caro-Kann, Panov-Botvinnik Attack
+  ['e4', 'c6', 'd4', 'd5', 'exd5', 'cxd5', 'c4', 'Nf6', 'Nc3', 'e6'],
   // B16	Caro-Kann, Bronstein-Larsen Variation
   ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Nf6', 'Nxf6+', 'gxf6'],
+  // B17	Caro-Kann, Steinitz Variation
+  ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Nd7'],
   // B19	Caro-Kann, Classical
   ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Bf5', 'Ng3', 'Bg6', 'h4', 'h6', 'Nf3', 'Nd7'],
+  // B21	Sicilian, 2.f4 and 2.d4
+  ['e4', 'c5', 'f4'],
+  // B22	Sicilian, Alapin
+  ['e4', 'c5', 'c3'],
+  // B26	Sicilian, Closed, 6.Be3
+  ['e4', 'c5', 'Nc3', 'Nc6', 'g3', 'g6', 'Bg2', 'Bg7', 'd3', 'd6', 'Be3'],
+  // B29	Sicilian, Nimzovich-Rubinstein
+  ['e4', 'c5', 'Nf3', 'Nf6'],
+  // B31	Sicilian, Rossolimo Variation
+  ['e4', 'c5', 'Nf3', 'Nc6', 'Bb5', 'g6'],
+  // B32	Sicilian
+  ['e4', 'c5', 'Nf3', 'Nc6', 'd4', 'cxd4', 'Nxd4', 'e5'],
+  // B34	Sicilian, Accelerated Fianchetto
+  ['e4', 'c5', 'Nf3', 'Nc6', 'd4', 'cxd4', 'Nxd4', 'g6', 'Nxc6'],
+  // B35	Sicilian, Accelerated Fianchetto, Modern Variation with Bc4
+  ['e4', 'c5', 'Nf3', 'Nc6', 'd4', 'cxd4', 'Nxd4', 'g6', 'Nc3', 'Bg7', 'Be3', 'Nf6', 'Bc4'],
+  // B39	Sicilian, Accelerated Fianchetto, Breyer Variation
+  ['e4', 'c5', 'Nf3', 'Nc6', 'd4', 'cxd4', 'Nxd4', 'g6', 'c4', 'Bg7', 'Be3', 'Nf6', 'Nc3', 'Ng4'],
+  // B42	Sicilian, Kan
+  ['e4', 'c5', 'Nf3', 'e6', 'd4', 'cxd4', 'Nxd4', 'a6', 'Bd3'],
+  // B43	Sicilian, Kan, 5.Nc3
+  ['e4', 'c5', 'Nf3', 'e6', 'd4', 'cxd4', 'Nxd4', 'a6', 'Nc3'],
+  // B46	Sicilian, Taimanov Variation
+  ['e4', 'c5', 'Nf3', 'e6', 'd4', 'cxd4', 'Nxd4', 'Nc6', 'Nc3', 'a6'],
+  // B49	Sicilian, Taimanov Variation
+  ['e4', 'c5', 'Nf3', 'e6', 'd4', 'cxd4', 'Nxd4', 'Nc6', 'Nc3', 'Qc7', 'Be3', 'a6', 'Be2'],
+  // B52	Sicilian, Canal-Sokolsky (Rossolimo) Attack
+  ['e4', 'c5', 'Nf3', 'd6', 'Bb5+', 'Bd7'],
+  // B53	Sicilian
+  ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Qxd4'],
+  // B55	Sicilian, Prins Variation, Venice Attack
+  ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'f3', 'e5', 'Bb5+'],
+  
 ]
 
 // 棋譜を文字列にして返す（開発用）

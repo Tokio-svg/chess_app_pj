@@ -7,7 +7,9 @@ const thinkMessage = document.getElementById('thinkMessage');
 // 各種変数
 // ---------------------------------------------
 // 先読み深さ
-const SEARCH_DEPTH = 2;
+let SEARCH_DEPTH = 2;
+// 良さそうな手を格納する配列
+const wellMoves = [];
 // ハイライトの色指定
 const whiteSquareGrey = '#a9a9a9';
 const blackSquareGrey = '#696969';
@@ -18,9 +20,11 @@ const blackSquareGrey = '#696969';
 const cfg = {
   draggable: true,
   position: 'start',
+  onDragStart: onDragStart,
   onDrop: onDrop,
   onMouseoutSquare: removeHighlight,
   onMouseoverSquare: onMouseoverSquare,
+  // onMoveEnd: onMoveEnd,
 };
 
 // ---------------------------------------------
@@ -75,6 +79,16 @@ $('#flipBtn').on('click', board.flip);
 $('#histBtn').on('click', () => {
   console.log(game.history());
 });
+
+// ---------------------------------------------
+// 駒を掴んだ時の処理
+// ---------------------------------------------
+function onDragStart(source, piece, position, orientation) {
+  if ((orientation === 'white' && piece.search(/^w/) === -1) ||
+      (orientation === 'black' && piece.search(/^b/) === -1)) {
+    return false
+  }
+}
 
 // ---------------------------------------------
 // 駒が置かれた場合の処理
@@ -136,6 +150,11 @@ async function calcMove() {
   // 配列の中身が0になったらゲームを終了する
   if (cpuMoves.length === 0) return null;
 
+  // 良さそうな手に並び替え
+  const sortedMoves = await sortMoves(cpuMoves);
+
+  await adjustEvaluation(game);
+
   // 思考時間計算用変数
   const startTime = Date.now();
 
@@ -145,7 +164,7 @@ async function calcMove() {
   const moves = [];
   let maxScore = null;
   let alfa = -Infinity;
-  for (const [index, cpuMove] of cpuMoves.entries()) {
+  for (const [index, cpuMove] of sortedMoves.entries()) {
 
     const score = await getNodeScore(baseFen, cpuMove, turn, SEARCH_DEPTH, alfa);
 
@@ -166,8 +185,9 @@ async function calcMove() {
   const selectedIndex = maxMoves[randomNum].index;
   // 思考時間を出力
   console.log((Date.now() - startTime) + 'ms');
+  // console.log(moves)
 
-  return cpuMoves[selectedIndex];
+  return sortedMoves[selectedIndex];
 
 }
 
@@ -228,6 +248,8 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
   // 深度が1以上なら移動可能な手を取得して各手に対して再帰的に処理する
   const baseFen = calcGame.fen();
   const legalMoves = calcGame.moves();
+  // 良さそうな手に並び替え
+  const sortedMoves = await sortMoves(legalMoves);
   const nextTurn = turn === 'w' ? 'b' : 'w';
   let nextAlfa = cpuTurnFlg ? -Infinity : Infinity;
   let maxScore = null;
@@ -238,7 +260,7 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
     return cpuTurnFlg ? score : -score;
   }
 
-  for (const legalMove of legalMoves) {
+  for (const legalMove of sortedMoves) {
     const score = await getNodeScore(baseFen, legalMove, nextTurn, depth - 1, nextAlfa);
 
     if (maxScore === null) {
@@ -250,12 +272,24 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
     if ((cpuTurnFlg && maxScore > score) || (!cpuTurnFlg && maxScore < score)) {
       maxScore = score;
       nextAlfa = maxScore;
+      // 優先度の高い手リストに追加
+      if (!wellMoves.includes(legalMove)) wellMoves.push(legalMove);
     }
     // CPUの手番の場合：下限値alfaよりも小さい値が出たら探索を終了
     // プレイヤーの手番の場合：下限値alfaよりも大きい値が出たら探索を終了
     if ((cpuTurnFlg && maxScore < alfa) || (!cpuTurnFlg && maxScore > alfa)) break;
   }
   return maxScore;
+}
+
+// ---------------------------------------------
+// 候補手ソート
+// ---------------------------------------------
+function sortMoves(moves) {
+  if (!wellMoves.length) return moves;
+  const isGood = moves.filter((item) => wellMoves.includes(item));
+  const isNotGood = moves.filter((item) => !wellMoves.includes(item));
+  return isGood.concat(isNotGood);
 }
 
 // ---------------------------------------------
@@ -273,16 +307,146 @@ const PIECE_SCORE = {
 }
 
 // 位置による補正(indexはchess.board()に対応)
-const POS_RATE = [
-  [1, 1, 1,   1,   1,   1,   1, 1],
-  [1, 1, 1,   1,   1,   1,   1, 1],
-  [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
-  [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
-  [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
-  [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
-  [1, 1, 1,   1,   1,   1,   1, 1],
-  [1, 1, 1,   1,   1,   1,   1, 1]
-];
+const POS_RATE = {
+  'p': {
+    'w': [
+      [9, 9, 9,   9,   9,   9,   9, 9],
+      [5, 5, 5,   5,   5,   5,   5, 5],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ],
+    'b': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [5, 5, 5,   5,   5,   5,   5, 5],
+      [9, 9, 9,   9,   9,   9,   9, 9]
+    ]
+  },
+
+  'n': {
+    'w': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ],
+    'b': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ]
+  },
+
+  'b': {
+    'w': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ],
+    'b': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.2, 1.2, 1.1, 1, 1],
+      [1, 1, 1.1, 1.1, 1.1, 1.1, 1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ]
+  },
+
+  'r': {
+    'w': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1.1, 1.1, 1.1,   1.1,   1.1,   1.1,   1.1, 1.1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ],
+    'b': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1.1, 1.1, 1.1,   1.1,   1.1,   1.1,   1.1, 1.1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ]
+  },
+
+  'q': {
+    'w': [
+      [1, 1, 1,    1,    1,    1,    1, 1],
+      [1, 1, 1,    1,    1,    1,    1, 1],
+      [1, 1, 1.05, 1.05, 1.05, 1.05, 1, 1],
+      [1, 1, 1.05, 1.1,  1.1,  1.05, 1, 1],
+      [1, 1, 1.05, 1.1,  1.1,  1.05, 1, 1],
+      [1, 1, 1.05, 1.05, 1.05, 1.05, 1, 1],
+      [1, 1, 1,    1,    1,    1,    1, 1],
+      [1, 1, 1,    1,    1,    1,    1, 1]
+    ],
+    'b': [
+      [1, 1, 1,    1,    1,    1,    1, 1],
+      [1, 1, 1,    1,    1,    1,    1, 1],
+      [1, 1, 1.05, 1.05, 1.05, 1.05, 1, 1],
+      [1, 1, 1.05, 1.1,  1.1,  1.05, 1, 1],
+      [1, 1, 1.05, 1.1,  1.1,  1.05, 1, 1],
+      [1, 1, 1.05, 1.05, 1.05, 1.05, 1, 1],
+      [1, 1, 1,    1,    1,    1,    1, 1],
+      [1, 1, 1,    1,    1,    1,    1, 1]
+    ]
+  },
+
+  'k': {
+    'w': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ],
+    'b': [
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1],
+      [1, 1, 1,   1,   1,   1,   1, 1]
+    ]
+  },
+
+};
 
 // チェック状態の補正
 const CHECK_RATE = 1.05;
@@ -298,8 +462,8 @@ function evaluate(game, color) {
     for (const [squareIndex, square] of raw.entries()) {
       if (!square) continue;
       // square.type='p'~'k'
-      let pieceScore = PIECE_SCORE[square.type] * POS_RATE[rawIndex][squareIndex];
-      if (square.color === 'w') white += pieceScore;
+      let pieceScore = PIECE_SCORE[square['type']] * POS_RATE[square['type']][square['color']][rawIndex][squareIndex];
+      if (square['color'] === 'w') white += pieceScore;
         else black += pieceScore;
     }
   }
@@ -309,4 +473,18 @@ function evaluate(game, color) {
   if (game.in_check()) score * CHECK_RATE;  // 要修正
 
   return score;
+}
+
+// ---------------------------------------------
+// 評価値調整処理
+// ---------------------------------------------
+function adjustEvaluation(game) {
+  // 良さそうな手リストの古い要素を削除
+  if (wellMoves.length > 100) {
+    wellMoves.splice(0, wellMoves.length - 100);
+  }
+  // 候補手が20以下の場合は読みを4手先に変更
+  const numOfMove = game.moves().length;
+  if (numOfMove <= 20) SEARCH_DEPTH = 3;
+    else SEARCH_DEPTH = 2;
 }
