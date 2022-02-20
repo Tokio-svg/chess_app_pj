@@ -2,6 +2,9 @@
 // DOM
 // ---------------------------------------------
 const thinkMessage = document.getElementById('thinkMessage');
+const whiteScore = document.getElementById('whiteScore');
+const progressStatus = document.getElementById('progress');
+const cpuMoved = document.getElementById('cpuMoved');
 
 // ---------------------------------------------
 // 各種変数
@@ -84,6 +87,11 @@ $('#histBtn').on('click', () => {
   console.log(game.history());
 });
 
+// chess.board()表示ボタン
+$('#boardBtn').on('click', () => {
+  console.log(game.board());
+});
+
 // ---------------------------------------------
 // 駒を掴んだ時の処理
 // ---------------------------------------------
@@ -117,6 +125,7 @@ function onDrop(source, target) {
     // 思考中メッセージOFF
     thinkMessage.style.display = 'none';
     board.position(game.fen());
+    setStatus();
     // ゲームを終了する
     if (game.game_over()) {
       alert('終了');
@@ -125,6 +134,14 @@ function onDrop(source, target) {
 
 };
 
+// ---------------------------------------------
+// 現在のステータス表示処理
+// ---------------------------------------------
+function setStatus() {
+  const score = evaluate(game, 'w');
+  whiteScore.textContent = score;
+  progressStatus.textContent = progress;
+}
 
 // ----------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------------
@@ -146,7 +163,10 @@ async function makeCPUmove() {
 async function calcMove() {
   // 定跡をチェック
   const theoryMove = await checkTheory();
-  if (theoryMove) return theoryMove;
+  if (theoryMove) {
+    cpuMoved.textContent = theoryMove;
+    return theoryMove;
+  }
 
   // CPUが動ける場所を変数に代入
   const cpuMoves = game.moves();
@@ -189,7 +209,8 @@ async function calcMove() {
   const selectedIndex = maxMoves[randomNum].index;
   // 思考時間を出力
   console.log((Date.now() - startTime) + 'ms');
-  console.log(sortedMoves[selectedIndex]);
+  console.log('予想スコア:'+maxScore);
+  cpuMoved.textContent = sortedMoves[selectedIndex];
 
   return sortedMoves[selectedIndex];
 
@@ -281,7 +302,10 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
     }
     // CPUの手番の場合：下限値alfaよりも小さい値が出たら探索を終了
     // プレイヤーの手番の場合：下限値alfaよりも大きい値が出たら探索を終了
-    if ((cpuTurnFlg && maxScore < alfa) || (!cpuTurnFlg && maxScore > alfa)) break;
+    if ((cpuTurnFlg && score < alfa) || (!cpuTurnFlg && score > alfa)) {
+      maxScore = score;
+      break;
+    }
   }
   return maxScore;
 }
@@ -348,12 +372,16 @@ function adjustEvaluation(game) {
   //   else SEARCH_DEPTH = 2;
   // ポーン以外のピースの数から進捗度を計算
   const gameBoard = game.board();
-  const count = gameBoard.filter((item) => {
-    if (!item) return false;
-    if (item.type === 'p' || item.type === 'k') return false;
-    return true;
+
+  let count = 0;
+  gameBoard.forEach(raw => {
+    raw.forEach((square)=> {
+      if (square) {
+        if (square.type !== 'p' && square.type !== 'k') count++;
+      }
+    })
   });
-  progress = (14 - count.length) / 14;
+  progress = (14 - count) / 14;
 }
 
 // ピース基本点
@@ -506,22 +534,22 @@ const POS_RATE = {
     'end': {
       'w': [
         [-55, -32, -36, -17, -17, -36, -32, -55],
-        [-34, -10, -12, ,6, 6, -12, -10, -34],
+        [-34, -10, -12, 6, 6, -12, -10, -34],
         [-24, -2, 0, 13, 13, 0, -2, -24],
         [-26, -4, -7, 14, 14, -7, -4, -26],
         [-26, -3, -5, 16, 16, -5, -3, -26],
         [-23, 0, -3, 16, 16, -3, 0, -23],
-        [-34, -9, -14, ,4, 4, -14, -9, -34],
+        [-34, -9, -14, 4, 4, -14, -9, -34],
         [-58, -31, -37, -19, -19, -37, -31, -58],
       ],
       'b': [
         [-58, -31, -37, -19, -19, -37, -31, -58],
-        [-34, -9, -14, ,4, 4, -14, -9, -34],
+        [-34, -9, -14, 4, 4, -14, -9, -34],
         [-23, 0, -3, 16, 16, -3, 0, -23],
         [-26, -3, -5, 16, 16, -5, -3, -26],
         [-26, -4, -7, 14, 14, -7, -4, -26],
         [-24, -2, 0, 13, 13, 0, -2, -24],
-        [-34, -10, -12, ,6, 6, -12, -10, -34],
+        [-34, -10, -12, 6, 6, -12, -10, -34],
         [-55, -32, -36, -17, -17, -36, -32, -55],
       ]
     }
@@ -577,7 +605,7 @@ const POS_RATE = {
   'q': {
     'mid': {
       'w': [
-        [-1, -4, -1, 0, 0, -1, -4, -1,],
+        [-1, -4, -1, 0, 0, -1, -4, -1],
         [-2, 7, 7, 6, 6, 7, 7, -2],
         [-2, 6, 8, 10, 10, 8, 6, -2],
         [-3, 9, 8, 7, 7, 8, 9, -3],
@@ -594,7 +622,7 @@ const POS_RATE = {
         [-3, 9, 8, 7, 7, 8, 9, -3],
         [-2, 6, 8, 10, 10, 8, 6, -2],
         [-2, 7, 7, 6, 6, 7, 7, -2],
-        [-1, -4, -1, 0, 0, -1, -4, -1,],
+        [-1, -4, -1, 0, 0, -1, -4, -1],
       ]
     },
     'end': {
