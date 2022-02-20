@@ -109,7 +109,105 @@ const OPENINGS = [
   ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Qxd4'],
   // B55	Sicilian, Prins Variation, Venice Attack
   ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'f3', 'e5', 'Bb5+'],
-  
+
+  // C01	French, Exchange
+  ['e4', 'e6', 'd4', 'd5', 'exd5', 'exd5', 'Nc3', 'Nf6', 'Bg5'],
+  // C02	French, Advance
+  ['e4', 'e6', 'd4', 'd5', 'e5'],
+  // C04	French, Tarrasch, Guimard Main line
+  ['e4', 'e6', 'd4', 'd5', 'Nd2', 'Nc6', 'Ngf3', 'Nf6'],
+  // C06	French, Tarrasch
+  ['e4', 'e6', 'd4', 'd5', 'Nd2', 'Nf6', 'e5', 'Nfd7', 'Bd3', 'c5', 'c3', 'Nc6', 'Ne2', 'cxd4', 'cxd4'],
+  // C09	French, Tarrasch, Open Variation, Main line
+  ['e4', 'e6', 'd4', 'd5', 'Nd2', 'c5', 'exd5', 'exd5', 'Ngf3', 'Nc6'],
+  // C12	French, McCutcheon
+  ['e4', 'e6', 'd4', 'd5', 'Nc3', 'Nf6', 'Bg5', 'Bb4'],
+  // C14	French, Classical
+  ['e4', 'e6', 'd4', 'd5', 'Nc3', 'Nf6', 'Bg5', 'Be7', 'e5', 'Nfd7', 'Bxe7', 'Qxe7'],
+  // C19	French, Winawer, Advance
+  ['e4', 'e6', 'd4', 'd5', 'Nc3', 'Bb4', 'e5', 'c5', 'a3', 'Bxc3+', 'bxc3', 'Ne7'],
+  // C22	Center Game
+  ['e4', 'e5', 'd4', 'exd4', 'Qxd4', 'Nc6'],
+  // C24	Bishop's Opening
+  ['e4', 'e5', 'Bc4', 'Nf6'],
+  // C27	Vienna Game
+  ['e4', 'e5', 'Nc3', 'Nf6', 'Bc4', 'Nxe4'],
+  // C28	Vienna Game
+  ['e4', 'e5', 'Nc3', 'Nf6', 'Bc4', 'Nc6'],
+  // C29	Vienna Gambit
+  ['e4', 'e5', 'Nc3', 'Nf6', 'f4'],
+  // C32	King's Gambit Declined, Falkbeer Counter Gambit
+  ['e4', 'e5', 'f4', 'd5', 'exd5', 'e4', 'd3', 'Nf6'],
+  // C35	King's Gambit Accepted, Cunningham
+  ['e4', 'e5', 'f4', 'exf4', 'Nf3', 'Be7'],
+  // C36	King's Gambit Accepted, Abbazia Defense
+  ['e4', 'e5', 'f4', 'exf4', 'Nf3', 'd5'],
+  // C37	King's Gambit Accepted
+  ['e4', 'e5', 'f4', 'exf4', 'Nf3', 'g5', 'Nc3'],
+  // C38	King's Gambit Accepted
+  ['e4', 'e5', 'f4', 'exf4', 'Nf3', 'g5', 'Bc4', 'Bg7'],
+  // C39	King's Gambit Accepted
+  ['e4', 'e5', 'f4', 'exf4', 'Nf3', 'g5', 'h4'],
+  // C41	Philidor Defense
+  ['e4', 'e5', 'Nf3', 'd6'],
+  // C43	Petrov, Modern Attack
+  ['e4', 'e5', 'Nf3', 'Nf6', 'd4', 'exd4', 'e5', 'Ne4', 'Qxd4'],
+  // C45	Scotch Game
+  ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4'],
+  // C49	Four Knights
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Nc3', 'Nf6', 'Bb5', 'Bb4'],
+  // C52	Evans Gambit
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'b4', 'Bxb4', 'c3', 'Ba5'],
+  // C54	Giuoco Piano
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'c3', 'Nf6', 'd4', 'exd4', 'cxd4'],
+  // C56	Two Knights
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'd4', 'exd4', 'O-O', 'Nxe4'],
+  // C59	Two Knights
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'Ng5', 'd5', 'exd5', 'Na5', 'Bb5+', 'c6', 'dxc6', 'bxc6', 'Be2', 'h6'],
+  // C61	Ruy Lopez, Bird's Defense
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'Nd4'],
+  // C62	Ruy Lopez, Old Steinitz Defense
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'd6'],
+  // C63	Ruy Lopez, Schliemann Defense
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'f5'],
+  // C64	Ruy Lopez, Classical
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'Bc5'],
+  // C66	Ruy Lopez
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'Nf6', 'O-O', 'd6'],
+  // C67	Ruy Lopez
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'Nf6', 'O-O', 'Nxe4'],
+  // C69	Ruy Lopez, Exchange, Gligoric Variation
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Bxc6', 'dc', 'O-O', 'f6'],
+  // C72	Ruy Lopez, Modern Steinitz Defense, 5.O-O
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'd6', 'O-O'],
+  // C73	Ruy Lopez, Modern Steinitz Defense
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'd6', 'Bxc6+', 'bxc6', 'd4'],
+  // C76	Ruy Lopez, Modern Steinitz Defense, Fianchetto Variation
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'd6', 'c3', 'Bd7', 'd4', 'g6'],
+  // C79	Ruy Lopez, Steinitz Defense Deferred
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'd6'],
+  // C81	Ruy Lopez, Open, Howell Attack
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Nxe4', 'd4', 'b5', 'Bb3', 'd5', 'dxe5', 'Be6', 'Qe2'],
+  // C82	Ruy Lopez, Open
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Nxe4', 'd4', 'b5', 'Bb3', 'd5', 'dxe5', 'Be6', 'c3'],
+  // C85	Ruy Lopez, Exchange Variation Doubly Deferred (DERLD)
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Bxc6', 'dxc6'],
+  // C86	Ruy Lopez, Worrall Attack
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Qe2'],
+  // C87	Ruy Lopez
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'd6'],
+  // C89	Ruy Lopez, Marshall
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'O-O', 'c3', 'd5'],
+  // C91	Ruy Lopez, Closed
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'O-O', 'c3', 'd6', 'd4'],
+  // C93	Ruy Lopez, Closed, Smyslov Defense
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'O-O', 'c3', 'd6', 'h3', 'h6'],
+  // C95	Ruy Lopez, Closed, Breyer
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'O-O', 'c3', 'd6', 'h3', 'Nb8', 'd4'],
+  // C98	Ruy Lopez, Closed, Chigorin
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'O-O', 'c3', 'd6', 'h3', 'Na5', 'Bc2', 'c5', 'd4', 'Qc7', 'Nbd2', 'Nc6'],
+  // C99	Ruy Lopez, Closed, Chigorin, 12...cd
+  ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'O-O', 'c3', 'd6', 'h3', 'Na5', 'Bc2', 'c5', 'd4', 'Qc7', 'Nbd2', 'cxd4', 'cxd4'],
 ]
 
 // 棋譜を文字列にして返す（開発用）
