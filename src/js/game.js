@@ -187,7 +187,7 @@ async function calcMove() {
   const turn = game.turn();
   const moves = [];
   let maxScore = null;
-  let alfa = -Infinity;
+  let alfa = null;
   for (const [index, cpuMove] of sortedMoves.entries()) {
 
     const score = await getNodeScore(baseFen, cpuMove, turn, SEARCH_DEPTH, alfa);
@@ -257,12 +257,12 @@ function checkTheory() {
 // ---------------------------------------------
 
 // SEARCH_DEPTH + 1手先までを探索して最善手候補を配列として返す
-async function getNodeScore(fen, move, turn, depth, alfa) {
+async function getNodeScore(fen, move, turn, depth, alfa, limitDepth=SEARCH_DEPTH) {
   // 現在の盤面を計算用のインスタンスにセット
   calcGame.load(fen);
   // 計算用のインスタンスを1手移動
   calcGame.move(move, { promotion: 'q' });
-  const cpuTurnFlg = (SEARCH_DEPTH - depth) % 2 === 0; // CPUの手番の場合はtrue
+  const cpuTurnFlg = (limitDepth - depth) % 2 === 0; // CPUの手番の場合はtrue
 
   // 深度が0ならスコアを計算して返す
   if (depth === 0) {
@@ -272,11 +272,11 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
 
   // 深度が1以上なら移動可能な手を取得して各手に対して再帰的に処理する
   const baseFen = calcGame.fen();
-  const legalMoves = calcGame.moves();
+  const legalMoves = Object.assign([], calcGame.moves());
   // 良さそうな手に並び替え
   const sortedMoves = await sortMoves(legalMoves);
   const nextTurn = turn === 'w' ? 'b' : 'w';
-  let nextAlfa = cpuTurnFlg ? -Infinity : Infinity;
+  let nextAlfa = null;
   let maxScore = null;
 
   // 移動可能な手が存在しない場合はスコアを計算して返す
@@ -301,8 +301,8 @@ async function getNodeScore(fen, move, turn, depth, alfa) {
       if (!wellMoves.includes(legalMove)) wellMoves.push(legalMove);
     }
     // CPUの手番の場合：下限値alfaよりも小さい値が出たら探索を終了
-    // プレイヤーの手番の場合：下限値alfaよりも大きい値が出たら探索を終了
-    if ((cpuTurnFlg && score < alfa) || (!cpuTurnFlg && score > alfa)) {
+    // プレイヤーの手番の場合：上限値alfaよりも大きい値が出たら探索を終了
+    if (alfa !== null && ((cpuTurnFlg && score < alfa) || (!cpuTurnFlg && score > alfa))) {
       maxScore = score;
       break;
     }
